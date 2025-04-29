@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Due Clear - Invoice Generator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    .header {
+      background-color: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 1rem 0;
+    }
+    .logo {
+      color: #3b82f6;
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100px;
+    }
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: white;
+      background-color: #d1d5db;
+    }
+    .step-number.active {
+      background-color: #3b82f6;
+    }
+    .step-number.completed {
+      background-color: #10b981;
+    }
+    .step-label {
+      font-size: 0.875rem;
+      color: #6b7280;
+    }
+    .step-label.active {
+      color: #111827;
+      font-weight: 500;
+    }
+    .invoice-preview {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    .invoice-form {
+      background-color: white;
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    .form-label {
+      display: block;
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+    }
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    }
+    .btn {
+      display: inline-block;
+      background-color: #3b82f6;
+      color: white;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      text-decoration: none;
+      transition: background-color 0.2s;
+      cursor: pointer;
+      border: none;
+      font-size: 0.875rem;
+    }
+    .btn:hover {
+      background-color: #2563eb;
+    }
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #3b82f6;
+      color: #3b82f6;
+    }
+    .btn-outline:hover {
+      background-color: #f0f7ff;
+    }
+    .invoice-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1.5rem;
+    }
+    .invoice-table th,
+    .invoice-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .invoice-table th {
+      font-weight: 600;
+      color: #4b5563;
+      background-color: #f9fafb;
+    }
+    .invoice-total {
+      text-align: right;
+      margin-top: 1rem;
+    }
+    .invoice-total-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 0.5rem;
+    }
+    .invoice-total-label {
+      width: 150px;
+      text-align: left;
+      font-weight: 500;
+    }
+    .invoice-total-value {
+      width: 100px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="logo">Due Clear</div>
+    </div>
+  </header>
+  
+  <main class="container py-8">
+    <div class="step-indicator">
+      <div class="step">
+        <div class="step-number completed">1</div>
+        <div class="step-label">Details</div>
+      </div>
+      <div class="step">
+        <div class="step-number completed">2</div>
+        <div class="step-label">Items</div>
+      </div>
+      <div class="step">
+        <div class="step-number active">3</div>
+        <div class="step-label active">Review</div>
+      </div>
+    </div>
+    
+    <h1 class="text-2xl font-bold mb-6">Invoice Preview</h1>
+    <p class="text-gray-600 mb-6">This is how your invoice will look when downloaded as a PDF.</p>
+    
+    <div class="invoice-preview" id="invoice-preview">
+      <!-- Invoice preview will be rendered here -->
+      <div class="flex justify-between items-start mb-8">
+        <div>
+          <img src="" alt="Company Logo" class="max-h-16 mb-4 hidden" id="preview-logo">
+          <div class="text-gray-800 whitespace-pre-line" id="preview-business-details"></div>
+        </div>
+        <div class="text-right">
+          <h2 class="text-2xl font-bold text-gray-800">INVOICE</h2>
+          <div class="text-gray-600 mt-2">
+            <div><span class="font-semibold">Invoice #:</span> <span id="preview-invoice-number"></span></div>
+            <div><span class="font-semibold">Issue Date:</span> <span id="preview-issue-date"></span></div>
+            <div><span class="font-semibold">Due Date:</span> <span id="preview-due-date"></span></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mb-8">
+        <h3 class="text-sm font-semibold text-gray-500 mb-2">BILLED TO</h3>
+        <div class="text-gray-800 whitespace-pre-line" id="preview-client-details"></div>
+      </div>
+      
+      <table class="invoice-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th class="text-right">Quantity</th>
+            <th class="text-right">Rate</th>
+            <th class="text-right">Discount</th>
+            <th class="text-right">Amount</th>
+          </tr>
+        </thead>
+        <tbody id="preview-items">
+          <!-- Items will be inserted here -->
+        </tbody>
+      </table>
+      
+      <div class="invoice-total">
+        <div class="invoice-total-row">
+          <div class="invoice-total-label">Subtotal:</div>
+          <div class="invoice-total-value" id="preview-subtotal">$0.00</div>
+        </div>
+        <div class="invoice-total-row text-green-600" id="preview-discount-row">
+          <div class="invoice-total-label">Discount:</div>
+          <div class="invoice-total-value" id="preview-discount">-$0.00</div>
+        </div>
+        <div class="invoice-total-row" id="preview-tax-row">
+          <div class="invoice-total-label">Tax:</div>
+          <div class="invoice-total-value" id="preview-tax">$0.00</div>
+        </div>
+        <div class="invoice-total-row" id="preview-shipping-row">
+          <div class="invoice-total-label">Shipping:</div>
+          <div class="invoice-total-value" id="preview-shipping">$0.00</div>
+        </div>
+        <div class="invoice-total-row font-bold text-lg border-t border-gray-200 pt-2 mt-2">
+          <div class="invoice-total-label">Total:</div>
+          <div class="invoice-total-value" id="preview-total">$0.00</div>
+        </div>
+      </div>
+      
+      <div class="mt-8 mb-8">
+        <h3 class="text-sm font-semibold text-gray-500 mb-2">PAYMENT DETAILS</h3>
+        <div class="text-gray-800">
+          <div><span class="font-semibold">Payment Method:</span> <span id="preview-payment-method"></span></div>
+          <div class="mt-2 whitespace-pre-line" id="preview-payment-details"></div>
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div id="preview-notes-section">
+          <h3 class="text-sm font-semibold text-gray-500 mb-2">NOTES</h3>
+          <div class="text-gray-800 whitespace-pre-line" id="preview-notes"></div>
+        </div>
+        <div id="preview-terms-section">
+          <h3 class="text-sm font-semibold text-gray-500 mb-2">TERMS & CONDITIONS</h3>
+          <div class="text-gray-800 whitespace-pre-line" id="preview-terms"></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="flex justify-between mt-6">
+      <a href="index.html" class="btn btn-outline">Back to Home</a>
+      <div>
+        <button class="btn btn-outline mr-2" onclick="window.print()">Print Invoice</button>
+        <button class="btn" onclick="generatePDF()">Download PDF</button>
+      </div>
+    </div>
+  </main>
+  
+  <script>
+    // Sample invoice data (in a real app, this would come from localStorage or a database)
+    const invoice = {
+      invoiceNumber: "INV-2025-001",
+      issueDate: "2025-04-29",
+      dueDate: "2025-05-29",
+      paymentTerms: "net_30",
+      currency: "USD",
+      businessDetails: "Your Business Name\nAddress Line 1\nCity, State ZIP\nPhone: (123) 456-7890\nEmail: business@example.com",
+      clientDetails: "Client Company\nAttn: John Doe\n123 Client Street\nClient City, State ZIP\nPhone: (987) 654-3210\nEmail: client@example.com",
+      paymentMethod: "bank_transfer",
+      bankDetails: "Bank Name: Example Bank\nAccount Name: Your Business\nAccount Number: 1234567890\nRouting Number: 987654321",
+      items: [
+        {
+          id: "1",
+          description: "Web Design Services",
+          quantity: 1,
+          rate: 1500,
+          discount: 10,
+          amount: 1350
+        },
+        {
+          id: "2",
+          description: "Hosting (Annual)",
+          quantity: 1,
+          rate: 200,
+          discount: 0,
+          amount: 200
+        }
+      ],
+      subtotal: 1700,
+      discountTotal: 150,
+      tax: 80,
+      shipping: 0,
+      totalAmount: 1630,
+      notes: "Thank you for your business!",
+      terms: "Payment is due within 30 days of receipt of this invoice."
+    };
+    
+    // Format a date string
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    }
+    
+    // Format a currency value
+    function formatCurrency(value, currency = 'USD') {
+      const currencySymbols = {
+        USD: '$',
+        EUR: '€',
+        GBP: '£',
+        INR: '₹',
+        JPY: '¥',
+        CAD: 'CA$',
+        AUD: 'A$'
+      };
+      
+      const symbol = currencySymbols[currency] || currency;
+      return `${symbol}${parseFloat(value).toFixed(2)}`;
+    }
+    
+    // Get payment method label
+    function getPaymentMethodLabel(method) {
+      const methods = {
+        bank_transfer: 'Bank Transfer',
+        paypal: 'PayPal',
+        upi: 'UPI',
+        payment_link: 'Payment Link',
+        cash: 'Cash'
+      };
+      
+      return methods[method] || method;
+    }
+    
+    // Populate the invoice preview
+    function populateInvoicePreview(invoice) {
+      // Invoice header
+      document.getElementById('preview-invoice-number').textContent = invoice.invoiceNumber;
+      document.getElementById('preview-issue-date').textContent = formatDate(invoice.issueDate);
+      document.getElementById('preview-due-date').textContent = formatDate(invoice.dueDate);
+      
+      // Business and client details
+      document.getElementById('preview-business-details').textContent = invoice.businessDetails;
+      document.getElementById('preview-client-details').textContent = invoice.clientDetails;
+      
+      // Logo
+      const logoElement = document.getElementById('preview-logo');
+      if (invoice.logoUrl) {
+        logoElement.src = invoice.logoUrl;
+        logoElement.classList.remove('hidden');
+      } else {
+        logoElement.classList.add('hidden');
+      }
+      
+      // Invoice items
+      const itemsContainer = document.getElementById('preview-items');
+      itemsContainer.innerHTML = '';
+      
+      if (invoice.items && invoice.items.length > 0) {
+        invoice.items.forEach(item => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${item.description}</td>
+            <td class="text-right">${item.quantity}</td>
+            <td class="text-right">${formatCurrency(item.rate, invoice.currency)}</td>
+            <td class="text-right">${item.discount}%</td>
+            <td class="text-right">${formatCurrency(item.amount, invoice.currency)}</td>
+          `;
+          itemsContainer.appendChild(row);
+        });
+      } else {
+        const row = document.createElement('tr');
+        row.innerHTML = '<td colspan="5" class="text-center py-4 text-gray-500">No items</td>';
+        itemsContainer.appendChild(row);
+      }
+      
+      // Invoice totals
+      document.getElementById('preview-subtotal').textContent = formatCurrency(invoice.subtotal, invoice.currency);
+      
+      const discountRow = document.getElementById('preview-discount-row');
+      if (invoice.discountTotal && invoice.discountTotal > 0) {
+        document.getElementById('preview-discount').textContent = '-' + formatCurrency(invoice.discountTotal, invoice.currency);
+        discountRow.classList.remove('hidden');
+      } else {
+        discountRow.classList.add('hidden');
+      }
+      
+      const taxRow = document.getElementById('preview-tax-row');
+      if (invoice.tax && invoice.tax > 0) {
+        document.getElementById('preview-tax').textContent = formatCurrency(invoice.tax, invoice.currency);
+        taxRow.classList.remove('hidden');
+      } else {
+        taxRow.classList.add('hidden');
+      }
+      
+      const shippingRow = document.getElementById('preview-shipping-row');
+      if (invoice.shipping && invoice.shipping > 0) {
+        document.getElementById('preview-shipping').textContent = formatCurrency(invoice.shipping, invoice.currency);
+        shippingRow.classList.remove('hidden');
+      } else {
+        shippingRow.classList.add('hidden');
+      }
+      
+      document.getElementById('preview-total').textContent = formatCurrency(invoice.totalAmount, invoice.currency);
+      
+      // Payment details
+      document.getElementById('preview-payment-method').textContent = getPaymentMethodLabel(invoice.paymentMethod);
+      
+      let paymentDetails = '';
+      if (invoice.paymentMethod === 'bank_transfer' && invoice.bankDetails) {
+        paymentDetails = invoice.bankDetails;
+      } else if (invoice.paymentMethod === 'paypal' && invoice.paypalDetails) {
+        paymentDetails = invoice.paypalDetails;
+      } else if (invoice.paymentMethod === 'upi' && invoice.upiDetails) {
+        paymentDetails = invoice.upiDetails;
+      } else if (invoice.paymentMethod === 'payment_link' && invoice.paymentLinkDetails) {
+        paymentDetails = invoice.paymentLinkDetails;
+      } else if (invoice.paymentMethod === 'cash' && invoice.cashDetails) {
+        paymentDetails = invoice.cashDetails;
+      }
+      
+      document.getElementById('preview-payment-details').textContent = paymentDetails;
+      
+      // Notes and terms
+      const notesSection = document.getElementById('preview-notes-section');
+      if (invoice.notes) {
+        document.getElementById('preview-notes').textContent = invoice.notes;
+        notesSection.classList.remove('hidden');
+      } else {
+        notesSection.classList.add('hidden');
+      }
+      
+      const termsSection = document.getElementById('preview-terms-section');
+      if (invoice.terms) {
+        document.getElementById('preview-terms').textContent = invoice.terms;
+        termsSection.classList.remove('hidden');
+      } else {
+        termsSection.classList.add('hidden');
+      }
+    }
+    
+    // Generate PDF (simplified function for static demo)
+    function generatePDF() {
+      // In a real application, you would use a library like jsPDF or html2pdf.js
+      // For this demo, we'll just show an alert
+      alert('PDF generation would be implemented using a library like jsPDF in a production environment.');
+      
+      // Example of how it might work with html2pdf
+      // html2pdf()
+      //   .from(document.getElementById('invoice-preview'))
+      //   .save(`invoice-${invoice.invoiceNumber}.pdf`);
+    }
+    
+    // Initialize the preview when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      populateInvoicePreview(invoice);
+    });
+  </script>
+</body>
+          </html>
